@@ -1,0 +1,68 @@
+#!/usr/bin/python3 -SIBbb
+from __future__ import print_function, unicode_literals # keep flycheck happy
+
+import os
+import sys
+
+snap=os.getenv("SNAP")
+if snap:
+    os.chdir(os.getenv("SNAP"))
+else:
+    os.chdir(os.path.realpath(os.path.dirname(os.path.dirname(__file__))))
+
+had_traceback = False
+snapd_idx = -1
+# XXX: hackish
+for i, x in enumerate(sys.argv):
+    if x=="--help":
+        os.execv("./bin/man", ("man",))
+
+    if x=="--traceback":
+        had_traceback = True
+
+    if x.startswith("snapd:///"):
+        snapd_idx = i
+
+# XXX: Switch to using httpie.context.Environment, if it works
+# for this
+if not had_traceback:
+    sys.argv.insert(1, "--traceback")
+    snapd_idx+=1
+
+sys.path.append("libs")
+envkey = "SNAP_APP_USER_DATA_PATH" if os.getuid() else "SNAP_APP_DATA_PATH"
+
+if snap:
+    envkey = "SNAP_USER_DATA" if os.getuid() else "SNAP_DATA"
+    if "HTTPIE_CONFIG_DIR" not in os.environ:
+        os.environ["HTTPIE_CONFIG_DIR"] = os.environ[envkey]
+
+from httpie.plugins import plugin_manager
+from requests_unixsocket import DEFAULT_SCHEME
+from requests.compat import urlparse, urlunparse, quote
+from httpie_unixsocket import UnixSocketTransportPlugin
+plugin_manager.register(UnixSocketTransportPlugin)
+
+if snapd_idx >-1:
+    SCHEME = scheme=urlparse(DEFAULT_SCHEME).scheme
+    NETLOC = quote("/run/snapd.socket", safe="")
+
+    sys.argv[snapd_idx] = urlunparse(urlparse(sys.argv[snapd_idx])._replace(scheme=SCHEME, netloc=NETLOC))
+
+from requests import exceptions as reqexc
+from requests.packages.urllib3 import exceptions as ur3exc
+
+import httpie.core
+try:
+    httpie.core.main()
+except Exception as e:
+    if had_traceback:
+        raise
+    if tried_snapd:
+        if isinstance(e, reqexc.ConnectionError) and isinstance(e.args[0], ur3exc.ProtocolError) and isinstance(e.args[0].args[1], PermissionError):
+            print("can't access snapd socket", file=sys.stderr)
+            sys.exit(1)
+    print(e)
+    sys.exit(1)
+else:
+    sys.exit(0)

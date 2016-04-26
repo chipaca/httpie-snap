@@ -1,0 +1,13 @@
+name: http
+# version adds digits from the first Feigenbaum constant (see
+# https://oeis.org/A006890). Quoted to ensure it's treated as a
+# string, otherwise the trailing zero is lost on its way to the store.
+#         4.669201609102990671853203821578
+version: "4.6692016"
+summary: HTTPie in a snap
+apps:
+ man:
+  command: bin/man
+ http:
+  command: bin/http
+  plugs: [network, snapd-control]

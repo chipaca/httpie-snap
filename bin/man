@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+if [ -n "${SNAP:-}" ]; then
+    p="$SNAP"
+else
+    p="$(dirname "$( dirname "$0")")"
+fi
+export LESSSECURE=1
+exec /usr/bin/less "$p/README"
