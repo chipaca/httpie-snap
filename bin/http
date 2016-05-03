@@ -4,14 +4,18 @@ from __future__ import print_function, unicode_literals # keep flycheck happy
 import os
 import sys
 
+is_root=os.getuid() == 0
 snap=os.getenv("SNAP")
 if snap:
     os.chdir(snap)
 else:
+    # if is_root:
+    #     print("refusing to run unconfined as root.", file=sys.stderr)
+    #     sys.exit(1)
     os.chdir(os.path.realpath(os.path.dirname(os.path.dirname(__file__))))
 
 had_traceback = False
-snapd_idx = -1
+snapd_idx = -2
 # XXX: hackish
 for i, x in enumerate(sys.argv):
     if x=="--help" and os.path.exists("README"):
@@ -29,13 +33,16 @@ if not had_traceback:
     sys.argv.insert(1, "--traceback")
     snapd_idx+=1
 
-sys.path.append("libs")
-envkey = "SNAP_APP_USER_DATA_PATH" if os.getuid() else "SNAP_APP_DATA_PATH"
-
 if snap:
-    envkey = "SNAP_USER_DATA" if os.getuid() else "SNAP_DATA"
+    sys.path.append("libs")
+    envkey = "SNAP_DATA" if is_root else "SNAP_USER_DATA"
     if "HTTPIE_CONFIG_DIR" not in os.environ:
         os.environ["HTTPIE_CONFIG_DIR"] = os.environ[envkey]
+else:
+    # maybe we're running "raw"
+    from glob import iglob
+    sys.path.extend(os.path.dirname(i)
+                    for i in iglob("**/httpie_unixsocket.py", recursive=True))
 
 from httpie.plugins import plugin_manager
 from requests_unixsocket import DEFAULT_SCHEME
