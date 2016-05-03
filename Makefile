@@ -8,7 +8,6 @@ build-env:
 stage-snap:
 	mkdir -pv stage
 	env/bin/http --help | sed -e '/^[^ ].*:$$/ { s/\([^:]\)/_\1/g} ; /^ *[A-Z_]\+$$/ s/\([^ ]\)/\1\1/g' > stage/README
-	cat <<EOF
 	echo '\nbut note that bugs in the snap package itself (or in the snapd:// schema)\nshould go to https://github.com/chipaca/httpie-snap instead.' >> stage/README
 	cp -a bin meta stage
 	cp -a env/lib/python3.5/site-packages stage/libs

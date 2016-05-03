@@ -6,7 +6,7 @@ import sys
 
 snap=os.getenv("SNAP")
 if snap:
-    os.chdir(os.getenv("SNAP"))
+    os.chdir(snap)
 else:
     os.chdir(os.path.realpath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -14,7 +14,7 @@ had_traceback = False
 snapd_idx = -1
 # XXX: hackish
 for i, x in enumerate(sys.argv):
-    if x=="--help":
+    if x=="--help" and os.path.exists("README"):
         os.execv("./bin/man", ("man",))
 
     if x=="--traceback":
@@ -44,10 +44,10 @@ from httpie_unixsocket import UnixSocketTransportPlugin
 plugin_manager.register(UnixSocketTransportPlugin)
 
 if snapd_idx >-1:
-    SCHEME = scheme=urlparse(DEFAULT_SCHEME).scheme
-    NETLOC = quote("/run/snapd.socket", safe="")
+    scheme = urlparse(DEFAULT_SCHEME).scheme
+    netloc = quote("/run/snapd.socket", safe="")
 
-    sys.argv[snapd_idx] = urlunparse(urlparse(sys.argv[snapd_idx])._replace(scheme=SCHEME, netloc=NETLOC))
+    sys.argv[snapd_idx] = urlunparse(urlparse(sys.argv[snapd_idx])._replace(scheme=scheme, netloc=netloc))
 
 from requests import exceptions as reqexc
 from requests.packages.urllib3 import exceptions as ur3exc
