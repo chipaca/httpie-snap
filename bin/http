@@ -58,7 +58,7 @@ try:
 except Exception as e:
     if had_traceback:
         raise
-    if tried_snapd:
+    if snapd_idx >-1:
         if isinstance(e, reqexc.ConnectionError) and isinstance(e.args[0], ur3exc.ProtocolError) and isinstance(e.args[0].args[1], PermissionError):
             print("can't access snapd socket", file=sys.stderr)
             sys.exit(1)
