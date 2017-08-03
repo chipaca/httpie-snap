@@ -27,7 +27,7 @@ stage-snap:
 		$(p)/pkg_resources
 	find stage -type f \( -name '*.py[co]' -o -name '*~' \) -delete
 	find stage -type d -empty -delete
-
+	curl -o stage/httpie-completion.bash https://raw.githubusercontent.com/jakubroztocil/httpie/master/extras/httpie-completion.bash
 
 build-snap:
 	mksquashfs stage http_$(shell env/bin/python3 -c 'import yaml; print(yaml.load(open("meta/snap.yaml"))["version"])').snap -noappend -comp xz -all-root -no-xattrs

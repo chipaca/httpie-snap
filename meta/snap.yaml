@@ -19,3 +19,4 @@ apps:
  http:
   command: bin/http
   plugs: [network, network-bind, snapd-control]
+  completer: httpie-completion.bash
