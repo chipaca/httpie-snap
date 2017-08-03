@@ -10,6 +10,9 @@ build-env:
 p := env/lib/python3.5/site-packages
 
 stage-snap:
+	$(eval snapVer := $(shell env/bin/python3 -c 'import yaml; print(yaml.load(open("meta/snap.yaml"))["version"])'))
+	$(eval httpVer := $(shell env/bin/http --version))
+	echo $(snapVer) | grep -q "^$(httpVer)-"
 	mkdir -pv stage/libs
 	env/bin/http --help | sed -e '/^[^ ].*:$$/ { s/\([^:]\)/_\1/g} ; /^ *[A-Z_]\+$$/ s/\([^ ]\)/\1\1/g' > stage/README
 	echo '\nbut note that bugs in the snap package itself (or in the snapd:// schema)\nshould go to https://github.com/chipaca/httpie-snap instead.' >> stage/README

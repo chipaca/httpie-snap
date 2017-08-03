@@ -1,7 +1,7 @@
 name: http
-version: "0.9.6-0"
+version: "0.9.9-0"
 summary: HTTPie in a snap
-description: |
+description: |-
   HTTPie (pronounced aitch-tee-tee-pie) is a command line HTTP
   client. Its goal is to make CLI interaction with web services as
   human-friendly as possible. It provides a simple http command that
@@ -12,6 +12,7 @@ description: |
   This version of httpie includes unix socket support, and in
   particular support for snapd:// URLs for ease of interaction with
   the snapd REST API.
+architectures: [all]
 apps:
  man:
   command: bin/man
