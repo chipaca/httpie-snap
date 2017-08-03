@@ -22,6 +22,10 @@ stage-snap:
 		$(p)/httpie_unixsocket.py \
 		$(p)/socks.py \
 		$(p)/pygments \
+		$(p)/urllib3 \
+		$(p)/chardet \
+		$(p)/certifi \
+		$(p)/idna \
 		$(p)/requests \
 		$(p)/requests_unixsocket \
 		$(p)/pkg_resources

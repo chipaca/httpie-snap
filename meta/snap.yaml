@@ -1,5 +1,5 @@
 name: http
-version: "0.9.9-0"
+version: "0.9.9-1"
 summary: HTTPie in a snap
 description: |-
   HTTPie (pronounced aitch-tee-tee-pie) is a command line HTTP
