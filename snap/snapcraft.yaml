@@ -1,0 +1,83 @@
+name: http
+summary: HTTPie in a snap
+base: core18
+description: |-
+  HTTPie (pronounced aitch-tee-tee-pie) is a command line HTTP
+  client. Its goal is to make CLI interaction with web services as
+  human-friendly as possible. It provides a simple http command that
+  allows for sending arbitrary HTTP requests using a simple and
+  natural syntax, and displays colorized output. HTTPie can be used
+  for testing, debugging, and generally interacting with HTTP servers.
+
+  This version of httpie includes unix socket support, and in
+  particular support for snapd:// URLs for ease of interaction with
+  the snapd REST API.
+architectures: [all]
+apps:
+ man:
+  command: bin/man
+ http:
+  command: bin/http
+  plugs: [network, network-bind, snapd-control, home, removable-media]
+  completer: httpie-completion.bash
+  environment:
+    LC_ALL: C.UTF-8
+
+grade: stable
+confinement: strict
+adopt-info: http
+
+parts:
+  http:
+    plugin: dump
+    source: .
+    build-packages:
+      - virtualenv
+    override-pull: |
+      snapcraftctl pull
+      virtualenv --python=python3 --unzip-setuptools --clear ~/env
+      . ~/env/bin/activate
+      pip install -U requests[socks]
+      pip install -U httpie
+      pip install -U httpie_unixsocket
+      pip install -U pyyaml
+      snapcraftctl set-version "$( http --version )"
+    override-build: |
+      snapcraftctl build
+      b=$(echo -n '\b')
+      cd "$SNAPCRAFT_PART_INSTALL"
+      (
+          ~/env/bin/http --help | sed -e '/^[^ ].*:$/ { s/\([^:]\)/_'"$b"'\1/g} ; /^ *[A-Z_]\+$/ s/\([^ ]\)/\1'"$b"'\1/g'
+          echo
+          echo 'but note that bugs in the snap package itself (or in the snapd:// schema)'
+          echo 'should go to https://github.com/chipaca/httpie-snap instead.'
+      ) > README
+      mkdir -p libs
+      p=~/env/lib/python3.6/site-packages
+      cp -a \
+        $p/httpie \
+        $p/httpie-*.dist-info \
+        $p/httpie_unixsocket.py \
+        $p/httpie_unixsocket-*.dist-info \
+        $p/requests \
+        $p/requests-*.dist-info \
+        $p/requests_toolbelt \
+        $p/requests_toolbelt-*.dist-info \
+        $p/requests_unixsocket \
+        $p/requests_unixsocket-*.dist-info \
+        $p/socks.py \
+        $p/sockshandler.py \
+        $p/PySocks-*.dist-info \
+        $p/pygments \
+        $p/Pygments-*.dist-info \
+        $p/chardet \
+        $p/chardet-*.dist-info \
+        $p/certifi \
+        $p/certifi-*.dist-info \
+        $p/idna \
+        $p/idna-*.dist-info \
+        $p/pkg_resources \
+        $p/pkg_resources-*.dist-info \
+        ./libs
+      ~/env/bin/python3 -m compileall -q libs
+

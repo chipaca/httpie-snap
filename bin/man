@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+export LESSSECURE=1
+exec /usr/bin/less "$SNAP/README"

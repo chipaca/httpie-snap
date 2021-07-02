@@ -1,0 +1,82 @@
+#!/usr/bin/python3 -SIBbb
+import os
+import sys
+
+is_root=os.getuid() == 0
+snap=os.getenv("SNAP")
+if not snap:
+    print("refusing to run unconfined.", file=sys.stderr)
+    sys.exit(1)
+
+had_traceback = False
+snapd_idx = -2
+# XXX: hackish
+for i, x in enumerate(sys.argv):
+    if x=="--help":
+        os.execv(os.path.join(snap, "bin/man"), ("man",))
+
+    if x=="--traceback":
+        had_traceback = True
+
+    if x.startswith("snapd://"):
+        snapd_idx = i
+
+# XXX: Switch to using httpie.context.Environment, if it works
+# for this
+if not had_traceback:
+    sys.argv.insert(1, "--traceback")
+    snapd_idx+=1
+
+sys.path = [
+    '/usr/lib/python3.6',
+    '/usr/lib/python3.6/lib-dynload',
+    os.path.join(snap, "libs"),
+    "/usr/lib/python3/dist-packages",
+]
+
+envkey = "SNAP_DATA" if is_root else "SNAP_USER_DATA"
+if "HTTPIE_CONFIG_DIR" not in os.environ:
+    os.environ["HTTPIE_CONFIG_DIR"] = os.environ[envkey]
+
+if snapd_idx >-1:
+    from requests_unixsocket import DEFAULT_SCHEME
+    from requests.compat import urlparse, urlunparse, quote
+
+    parsed = urlparse(sys.argv[snapd_idx])
+    if parsed.netloc not in ('', 'localhost'):
+        if sys.argv[snapd_idx].startswith('snapd://v2'):
+            fixed = sys.argv[snapd_idx].replace('snapd://v2', 'snapd:///v2', 1)
+            parsed = urlparse(fixed)
+            print(
+                "WARNING rewriting {} to {} but you should really fix it yourself".format(
+                    sys.argv[snapd_idx],
+                    fixed,
+                ),
+                file=sys.stderr)
+        else:
+            print("cannot connect to non-local snapd at {!r} (try snapd:///...)".format(parsed.netloc), file=sys.stderr)
+            sys.exit(1)
+
+    scheme = urlparse(DEFAULT_SCHEME).scheme
+    netloc = quote("/run/snapd.socket", safe="")
+    sys.argv[snapd_idx] = urlunparse(parsed._replace(scheme=scheme, netloc=netloc))
+
+import httpie.core
+try:
+    httpie.core.main()
+except Exception as e:
+    if had_traceback:
+        raise
+    if snapd_idx >-1:
+        import requests.exceptions
+        import urllib3.exceptions
+
+        if isinstance(e, requests.exceptions.ConnectionError) \
+           and isinstance(e.args[0], urllib3.exceptions.ProtocolError) \
+           and isinstance(e.args[0].args[1], PermissionError):
+            print("can't access snapd socket", file=sys.stderr)
+            sys.exit(1)
+    print(e)
+    sys.exit(1)
+else:
+    sys.exit(0)
